@@ -95,7 +95,7 @@ def evaluate_world_model(vae_path: str,
                 hidden_flat = h[0][-1].squeeze(0)
             inp = torch.cat([z, hidden_flat], dim=-1).unsqueeze(0)
             with torch.no_grad():
-                action = controller.act(inp)[0].item()
+                action = controller.act(inp, deterministic=True)[0].item()
             next_obs, reward, done, _ = env.step(int(action))
             ep_reward += reward
             if render:

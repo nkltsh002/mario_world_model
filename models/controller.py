@@ -2,12 +2,11 @@
 Controller network for the Mario World Model.
 
 The controller maps the latent state and memory hidden state to an action
-probability distribution.  A simple multi‑layer perceptron (MLP) is used.
+probability distribution.  A simple multi-layer perceptron (MLP) is used.
 """
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class Controller(nn.Module):
@@ -35,17 +34,20 @@ class Controller(nn.Module):
         """Forward pass producing action logits."""
         return self.model(x)
 
-    def act(self, x: torch.Tensor):
+    def act(self, x: torch.Tensor, deterministic: bool = False):
         """
         Select an action given the input features.
 
         Args:
             x: Input tensor of shape (batch, input_dim)
+            deterministic: If True return argmax action instead of sampling.
 
         Returns:
-            actions: Tensor of shape (batch,) with sampled actions.
+            actions: Tensor of shape (batch,) with chosen actions.
         """
         logits = self.forward(x)
-        probs = F.softmax(logits, dim=-1)
-        dist = torch.distributions.Categorical(probs)
+        if deterministic:
+            return torch.argmax(logits, dim=-1)
+        dist = torch.distributions.Categorical(logits=logits)
         return dist.sample()
+

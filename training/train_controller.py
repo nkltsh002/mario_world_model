@@ -88,7 +88,7 @@ def evaluate_controller(controller: Controller,
             inp = torch.cat([z, hidden_flat], dim=-1).unsqueeze(0)  # (1, latent_dim + hidden_size)
             # Sample action
             with torch.no_grad():
-                action = controller.act(inp)[0].item()
+                action = controller.act(inp, deterministic=True)[0].item()
             # Step in environment
             next_obs, reward, done, _ = env.step(int(action))
             ep_reward += reward

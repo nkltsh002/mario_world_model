@@ -58,7 +58,9 @@ class LatentSequenceDataset(Dataset):
             one_hot_actions = np.eye(action_dim)[actions]
             # Form sequences
             T = len(actions)
-            for i in range(T - sequence_length - 1):
+            if T <= sequence_length:
+                continue
+            for i in range(T - sequence_length):
                 latent_seq = latents[i : i + sequence_length]
                 action_seq = one_hot_actions[i : i + sequence_length]
                 # Input is concatenation of latent and action
@@ -92,6 +94,8 @@ def train_mdn_rnn(dataset_path: str,
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Load dataset and determine action dimension
     trajectories = load_dataset(dataset_path)
+    if len(trajectories) == 0:
+        raise ValueError('Dataset is empty - collect rollouts first.')
     # Determine action dimension from max action
     max_action = 0
     for traj in trajectories:
@@ -100,7 +104,13 @@ def train_mdn_rnn(dataset_path: str,
     action_dim = max_action + 1
 
     # Load VAE
-    sample_obs = trajectories[0]["observations"][0]
+    sample_obs = None
+    for traj in trajectories:
+        if len(traj['observations']) > 0:
+            sample_obs = traj['observations'][0]
+            break
+    if sample_obs is None:
+        raise ValueError('No observations available to infer frame dimensions.')
     frame_stack = sample_obs.shape[0]
     # Recreate VAE with appropriate dimensions
     latent_size = MarioConfig().vae.latent_size
@@ -109,7 +119,9 @@ def train_mdn_rnn(dataset_path: str,
 
     # Build dataset
     ds = LatentSequenceDataset(trajectories, vae, sequence_length, action_dim, device)
-    loader = DataLoader(ds, batch_size=batch_size, shuffle=True, drop_last=True)
+    if len(ds) == 0:
+        raise ValueError("No latent sequences were generated. Collect longer episodes or decrease --sequence-length.")
+    loader = DataLoader(ds, batch_size=batch_size, shuffle=True, drop_last=False)
 
     # Instantiate MDN-RNN
     mdnrnn = MDNRNN(latent_dim=latent_size,

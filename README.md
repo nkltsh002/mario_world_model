@@ -98,9 +98,11 @@ python -m mario_world_model.training.train_mdn_rnn \
 
 This script encodes the collected frames using the VAE, forms sequences of latent vectors and actions, and trains an MDN‑RNN.  The resulting model weights are stored in `checkpoints/mdn_rnn_mario.pt`.
 
+If training stops with "No latent sequences were generated" collect longer rollouts or reduce `--sequence-length`.
+
 ### 5. Train the controller
 
-Finally, train the controller inside the latent world.  The controller uses CMA‑ES to search for a weight vector that maximises the predicted cumulative reward:
+Finally, train the controller by optimising it with CMA-ES while interacting with the real environment.  The CMA-ES optimiser searches for a weight vector that maximises the cumulative reward estimated from those rollouts:
 
 ```bash
 python -m mario_world_model.training.train_controller \
@@ -111,7 +113,7 @@ python -m mario_world_model.training.train_controller \
     --output checkpoints/controller_mario.pt
 ```
 
-At each iteration the script uses the MDN‑RNN to simulate trajectories in latent space and evaluates candidate controllers.  You can increase the number of iterations for better results at the cost of computation.
+At each iteration the script evaluates candidate controllers directly in Super Mario Bros using deterministic rollouts while leveraging the MDN-RNN hidden state.  You can increase the number of iterations for better results at the cost of computation.
 
 ### 6. Train the PPO baseline (optional)
 
