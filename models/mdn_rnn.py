@@ -91,10 +91,10 @@ class MDNRNN(nn.Module):
         dist = Normal(mu, sigma)
         # Compute log-prob for each component: (seq_len, batch, M, latent_dim)
         log_prob = dist.log_prob(target_exp)
-        # Sum over latent dimensions: (seq_len, batch, M)
-        log_prob = log_prob.sum(dim=3)
-        # Combine with log mixture weights using log-sum-exp: (seq_len, batch)
+        # Combine with log mixture weights using log-sum-exp across mixture components
         log_prob = torch.logsumexp(log_pi + log_prob, dim=2)
+        # Sum over latent dimensions before averaging
+        log_prob = log_prob.sum(dim=2)
         # Negative log-likelihood
         nll = -log_prob.mean()
         return nll

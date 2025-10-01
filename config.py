@@ -55,7 +55,7 @@ class PPOConfig:
 class MarioConfig:
     """Top‑level configuration for the Mario World Model project."""
     env_name: str = "SuperMarioBros-1-1-v0"
-    vae: VAEConfig = VAEConfig()
-    mdnrnn: MDNRNNConfig = MDNRNNConfig()
-    controller: ControllerConfig = ControllerConfig()
-    ppo: PPOConfig = PPOConfig()
+    vae: VAEConfig = field(default_factory=VAEConfig)
+    mdnrnn: MDNRNNConfig = field(default_factory=MDNRNNConfig)
+    controller: ControllerConfig = field(default_factory=ControllerConfig)
+    ppo: PPOConfig = field(default_factory=PPOConfig)
