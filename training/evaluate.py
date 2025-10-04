@@ -19,6 +19,7 @@ Usage:
 """
 
 import argparse
+from typing import Optional
 
 import torch
 
@@ -41,7 +42,9 @@ def evaluate_world_model(vae_path: str,
                          env_name: str,
                          episodes: int = 10,
                          max_steps: int = 1000,
-                         render: bool = False) -> float:
+                         render: bool = False,
+                         hidden_size: Optional[int] = None,
+                         num_gaussians: Optional[int] = None) -> float:
     """
     Evaluate a trained world model by running the controller in the real environment.
 
@@ -65,12 +68,14 @@ def evaluate_world_model(vae_path: str,
     config = MarioConfig()
     vae = ConvVAE(input_channels=frame_stack, latent_dim=config.vae.latent_size).to(device)
     vae.load_state_dict(torch.load(vae_path, map_location=device))
+    mdnrnn_hidden = hidden_size or config.mdnrnn.hidden_size
+    mdnrnn_gaussians = num_gaussians or config.mdnrnn.num_mixtures
     mdnrnn = MDNRNN(latent_dim=config.vae.latent_size,
                     action_dim=env.action_space.n,
-                    hidden_size=config.mdnrnn.hidden_size,
-                    num_gaussians=config.mdnrnn.num_mixtures).to(device)
+                    hidden_size=mdnrnn_hidden,
+                    num_gaussians=mdnrnn_gaussians).to(device)
     mdnrnn.load_state_dict(torch.load(mdnrnn_path, map_location=device))
-    controller = Controller(input_dim=config.vae.latent_size + config.mdnrnn.hidden_size,
+    controller = Controller(input_dim=config.vae.latent_size + mdnrnn_hidden,
                             action_dim=env.action_space.n,
                             hidden_sizes=config.controller.hidden_sizes).to(device)
     controller.load_state_dict(torch.load(controller_path, map_location=device))
@@ -170,6 +175,8 @@ def main():
     parser.add_argument("--env", type=str, default="SuperMarioBros-1-1-v0", help="Environment name")
     parser.add_argument("--episodes", type=int, default=5, help="Number of episodes to run")
     parser.add_argument("--render", action="store_true", help="Render the gameplay")
+    parser.add_argument("--hidden-size", type=int, default=None, help="Hidden size of the MDN‑RNN")
+    parser.add_argument("--num-gaussians", type=int, default=None, help="Number of mixture components in the MDN‑RNN")
     args = parser.parse_args()
 
     if args.ppo:
@@ -178,8 +185,14 @@ def main():
     else:
         if not (args.vae and args.mdnrnn and args.controller):
             raise ValueError("For world model evaluation you must provide --vae, --mdnrnn and --controller paths.")
-        mean_reward = evaluate_world_model(args.vae, args.mdnrnn, args.controller,
-                                           args.env, args.episodes, render=args.render)
+        mean_reward = evaluate_world_model(args.vae,
+                                           args.mdnrnn,
+                                           args.controller,
+                                           args.env,
+                                           args.episodes,
+                                           render=args.render,
+                                           hidden_size=args.hidden_size,
+                                           num_gaussians=args.num_gaussians)
         print(f"Average world model reward over {args.episodes} episodes: {mean_reward:.2f}")
 
 
