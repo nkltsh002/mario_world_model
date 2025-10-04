@@ -21,7 +21,7 @@ import random
 
 import numpy as np
 
-from utils.environment import MarioEnvWrapper
+from mario_world_model.utils.environment import MarioEnvWrapper
 
 
 def collect_rollouts(env_name: str,

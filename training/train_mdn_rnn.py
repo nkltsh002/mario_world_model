@@ -21,9 +21,9 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from models.vae import ConvVAE
-from models.mdn_rnn import MDNRNN
-from config import MarioConfig
+from mario_world_model.models.vae import ConvVAE
+from mario_world_model.models.mdn_rnn import MDNRNN
+from mario_world_model.config import MarioConfig
 
 
 class LatentSequenceDataset(Dataset):

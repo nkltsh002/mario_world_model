@@ -22,11 +22,11 @@ import argparse
 
 import torch
 
-from models.vae import ConvVAE
-from models.mdn_rnn import MDNRNN
-from models.controller import Controller
-from utils.environment import MarioEnvWrapper
-from config import MarioConfig
+from mario_world_model.models.vae import ConvVAE
+from mario_world_model.models.mdn_rnn import MDNRNN
+from mario_world_model.models.controller import Controller
+from mario_world_model.utils.environment import MarioEnvWrapper
+from mario_world_model.config import MarioConfig
 
 # Only import stable-baselines3 when needed
 try:

@@ -19,8 +19,8 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from models.vae import ConvVAE
-from config import MarioConfig
+from mario_world_model.models.vae import ConvVAE
+from mario_world_model.config import MarioConfig
 
 
 def load_dataset(path: str):

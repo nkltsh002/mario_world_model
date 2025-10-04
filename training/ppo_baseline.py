@@ -17,8 +17,8 @@ import os
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 
-from utils.environment import MarioEnvWrapper
-from config import MarioConfig
+from mario_world_model.utils.environment import MarioEnvWrapper
+from mario_world_model.config import MarioConfig
 
 
 def make_mario_env(env_name: str):
