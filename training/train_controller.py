@@ -17,6 +17,7 @@ Usage:
 
 import argparse
 import os
+from typing import Optional
 
 import numpy as np
 import torch
@@ -120,7 +121,9 @@ def train_controller(vae_path: str,
                      iterations: int,
                      population_size: int,
                      init_sigma: float,
-                     output_path: str):
+                     output_path: str,
+                     hidden_size: Optional[int] = None,
+                     num_gaussians: Optional[int] = None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     config = MarioConfig()
     # Instantiate environment
@@ -130,13 +133,15 @@ def train_controller(vae_path: str,
     vae = ConvVAE(input_channels=frame_stack, latent_dim=config.vae.latent_size).to(device)
     vae.load_state_dict(torch.load(vae_path, map_location=device))
     # Load MDN-RNN
+    mdnrnn_hidden = hidden_size or config.mdnrnn.hidden_size
+    mdnrnn_gaussians = num_gaussians or config.mdnrnn.num_mixtures
     mdnrnn = MDNRNN(latent_dim=config.vae.latent_size,
                     action_dim=env.action_space.n,
-                    hidden_size=config.mdnrnn.hidden_size,
-                    num_gaussians=config.mdnrnn.num_mixtures).to(device)
+                    hidden_size=mdnrnn_hidden,
+                    num_gaussians=mdnrnn_gaussians).to(device)
     mdnrnn.load_state_dict(torch.load(mdnrnn_path, map_location=device))
     # Build Controller
-    input_dim = config.vae.latent_size + config.mdnrnn.hidden_size
+    input_dim = config.vae.latent_size + mdnrnn_hidden
     controller = Controller(input_dim=input_dim,
                             action_dim=env.action_space.n,
                             hidden_sizes=config.controller.hidden_sizes).to(device)
@@ -175,6 +180,8 @@ def main():
     parser.add_argument("--iterations", type=int, default=None, help="Number of CMA‑ES iterations")
     parser.add_argument("--population-size", type=int, default=None, help="CMA‑ES population size")
     parser.add_argument("--sigma", type=float, default=None, help="Initial exploration noise sigma")
+    parser.add_argument("--hidden-size", type=int, default=None, help="Hidden size of the MDN‑RNN")
+    parser.add_argument("--num-gaussians", type=int, default=None, help="Number of mixture components in the MDN‑RNN")
     parser.add_argument("--output", type=str, required=True, help="Path to save controller weights (.pt)")
     args = parser.parse_args()
 
@@ -182,7 +189,14 @@ def main():
     iterations = args.iterations or config.controller.iterations
     popsize = args.population_size or config.controller.population_size
     sigma = args.sigma or config.controller.sigma
-    train_controller(args.vae, args.mdnrnn, iterations, popsize, sigma, args.output)
+    train_controller(args.vae,
+                     args.mdnrnn,
+                     iterations,
+                     popsize,
+                     sigma,
+                     args.output,
+                     hidden_size=args.hidden_size,
+                     num_gaussians=args.num_gaussians)
 
 
 if __name__ == "__main__":
